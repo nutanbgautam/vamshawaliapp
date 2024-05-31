@@ -40,11 +40,11 @@ class Person(models.Model):
     def __str__(self):
         parent_name = ""
         grandfather_name = ""
-        
+
         if self.gender == 'M':
-            relationAttribute = ["छोरा","नाती"]
+            relationAttribute = ["छोरा","नाती","सिर्मान",""]
         elif self.gender == 'F':
-            relationAttribute = ["छोरी","नातिनी"]
+            relationAttribute = ["छोरी","नातिनी","सिर्मती",""]
 
         # Fetching the father's name
         father_relation = PersonRelationship.objects.filter(primaryPerson=self, relation='Child').select_related('secondaryPerson').first()
@@ -66,9 +66,13 @@ class Person(models.Model):
                     grandfather_relation = PersonRelationship.objects.filter(primaryPerson=father_relation.secondaryPerson, relation='Child').select_related('secondaryPerson').first()
                     if grandfather_relation:
                         grandfather_name = grandfather_relation.secondaryPerson.nepaliName
-        
+
+        if not grandfather_name:
+            return f"{self.nepaliName} : पुस्ता - {self.pustaNumber}"
+            
         return f"{grandfather_name} को {relationAttribute[1]}, {parent_name} को {relationAttribute[0]}, {self.nepaliName} : पुस्ता - {self.pustaNumber}"
-    
+
+        
     def get_absolute_url(self):
         from django.urls import reverse
         return reverse('detail_person',kwargs={'pk':self.id})
@@ -76,7 +80,7 @@ class Person(models.Model):
     def age(self):
         from datetime import datetime
         if self.birth:
-            return (datetime.now().date() - self.birth)
+            return (datetime.now().date() - self.birth).days
         else: return "No Birth Date Provided"
 
     def get_spouses(self):

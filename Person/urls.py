@@ -1,7 +1,7 @@
 from django.urls import path
 from Person.views import PersonCreateView,PersonUpdateView,PersonDetailView,PersonsListView,PersonDelete
 from Person.views import SuggestionCreateView,SuggestionUpdateView,SuggestionDetailView,SuggestionsListView,SuggestionDelete
-from Person.views import csvDataLoad,SearchView,family_tree
+from Person.views import csvDataLoad,SearchView,family_tree,PersonAutocomplete
 
 urlpatterns = [
     #Person
@@ -24,5 +24,5 @@ urlpatterns = [
     path('tree/person/<int:pk>', family_tree, name='family_tree'),
 
     # Code to be checked from here before adding to production
-
+    path('person-autocomplete/', PersonAutocomplete.as_view(), name='person-autocomplete')
 ]

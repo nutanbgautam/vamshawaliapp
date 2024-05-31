@@ -9,7 +9,7 @@
 {% endblock extra_head %}
 
 {% block page_title %}
-Gautam Vamshawali: Create Person
+Gautam Vamshawali: Update Person
 {% endblock page_title %}
 
 {% block nav_menu %}
@@ -22,7 +22,7 @@ Gautam Vamshawali: Create Person
             {{ form.as_div }}
             <br>
             <div class="alert alert-primary" role="alert">
-                Add Person Relationships
+                Update Person Relationships
             </div>
             <div id="relationships">
                 {{ relationships.management_form }}
@@ -54,7 +54,7 @@ Gautam Vamshawali: Create Person
             <br>
             <a href="#" id="add-form" class="btn btn-warning">Add another relationship</a>
 
-            <input class="btn btn-primary" type="submit" value="Add New">
+            <input class="btn btn-primary" type="submit" value="Update">
         </form>
         <br>
     </div>
@@ -164,4 +164,6 @@ Gautam Vamshawali: Create Person
             <a href="#" class="delete-form btn btn-danger">Delete</a>
         </div>
     </script>
+
+
 {% endblock page_content %}

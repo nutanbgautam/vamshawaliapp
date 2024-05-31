@@ -19,7 +19,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'Person'
+    'Person',
+    'dal',
+    'dal_select2',
+    'django_select2',
+
 ]
 
 MIDDLEWARE = [

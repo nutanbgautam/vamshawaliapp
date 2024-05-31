@@ -1,7 +1,4 @@
 
-5) Add Relation from same Add Person Form, Person in Relation form should be searchable by bookReferenceNumber and name should be shown
-11) Searchable while selecting person (Name:FatherName:GrandfatherName)
-
 1) Events : Birth, Death, Marriage, Graduation , XYZ
 (PersonA-EventType-EventDate)
 2) Download Table of data just below your tree in Book Format

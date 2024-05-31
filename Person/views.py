@@ -9,6 +9,7 @@ from django.views.generic.edit import CreateView
 from django.urls import reverse_lazy
 from django.contrib.auth.mixins import LoginRequiredMixin
 from .models import Person
+from dal import autocomplete
 from .forms import PersonRelationshipFormSet
 
 #HTML Templates
@@ -33,7 +34,7 @@ class PersonsListView(ListView):
 class PersonCreateView(LoginRequiredMixin, CreateView):
     model = Person
     fields = ['name', 'nepaliName', 'gender', 'photo', 'birth', 'death', 'pustaNumber', 'aliveOrDead', 'bookReferenceNumber', 'remarks']
-    template_name = person_create_template
+    template_name = 'Person/create_person.html'
     success_url = reverse_lazy('list_persons')
 
     def get_form(self, form_class=None):
@@ -41,6 +42,14 @@ class PersonCreateView(LoginRequiredMixin, CreateView):
         for visible in form.visible_fields():
             visible.field.widget.attrs.update({'class': 'form-control'})
         return form
+
+    def get_context_data(self, **kwargs):
+        data = super().get_context_data(**kwargs)
+        if self.request.POST:
+            data['relationships'] = PersonRelationshipFormSet(self.request.POST)
+        else:
+            data['relationships'] = PersonRelationshipFormSet()
+        return data
 
     def form_valid(self, form):
         context = self.get_context_data()
@@ -57,17 +66,47 @@ class PersonCreateView(LoginRequiredMixin, CreateView):
         context = self.get_context_data()
         context['form'] = form
         return self.render_to_response(context)
-    
-class PersonUpdateView(LoginRequiredMixin,UpdateView): 
-    model               = Person 
-    fields              = ['name','nepaliName', 'gender', 'photo','birth','death','pustaNumber','aliveOrDead','bookReferenceNumber','address','cityOrCountry','contactDetails','emailAddress','remarks']
-    success_url         = reverse_lazy('list_persons')
 
-    def get_form(self, form_class=None):
-        form = super(PersonUpdateView, self).get_form(form_class)
-        for visible in form.visible_fields():
-            visible.field.widget.attrs.update({'class' : 'form-control'})
-        return form
+class PersonAutocomplete(autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        if not self.request.user.is_authenticated:
+            return Person.objects.none()
+
+        qs = Person.objects.all()
+
+        if self.q:
+            qs = qs.filter(name__icontains=self.q) | qs.filter(nepaliName__icontains=self.q) | qs.filter(bookReferenceNumber__icontains=self.q)
+
+        return qs
+
+class PersonUpdateView(LoginRequiredMixin, UpdateView):
+    model = Person
+    fields = ['name', 'nepaliName', 'gender', 'photo', 'birth', 'death', 'pustaNumber', 'aliveOrDead', 'bookReferenceNumber', 'remarks', 'address', 'cityOrCountry', 'contactDetails', 'emailAddress']
+    template_name = 'Person/update_person.html'
+    success_url = reverse_lazy('list_persons')
+
+    def get_context_data(self, **kwargs):
+        data = super().get_context_data(**kwargs)
+        if self.request.POST:
+            data['relationships'] = PersonRelationshipFormSet(self.request.POST, instance=self.object)
+        else:
+            data['relationships'] = PersonRelationshipFormSet(instance=self.object)
+        return data
+
+    def form_valid(self, form):
+        context = self.get_context_data()
+        relationships = context['relationships']
+        if relationships.is_valid():
+            self.object = form.save()
+            relationships.save()
+            return redirect(self.success_url)
+        else:
+            return self.form_invalid(form)
+
+    def form_invalid(self, form):
+        context = self.get_context_data()
+        context['form'] = form
+        return self.render_to_response(context)
 
 def PersonDetailView(request,pk):
     person = get_object_or_404(Person, pk=pk)
