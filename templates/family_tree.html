@@ -9,25 +9,6 @@ Gautam Vamshawali : {{person.nepaliName}} Tree
 <style>
     .node circle {
         fill: #999;
-        stroke: steelblue;
-        stroke-width: 3px;
-    }
-
-    .node text {
-        font: 12px sans-serif;
-    }
-
-    .link {
-        fill: none;
-        stroke: #555;
-        stroke-opacity: 0.4;
-        stroke-width: 1.5px;
-    }
-</style><script src="https://d3js.org/d3.v6.min.js"></script>
-<style>
-    .node circle {
-        fill: #999;
-        stroke: steelblue;
         stroke-width: 3px;
     }
 
@@ -42,7 +23,7 @@ Gautam Vamshawali : {{person.nepaliName}} Tree
         stroke-width: 1.5px;
     }
 </style>
-{% endblock extra_css%}
+{% endblock extra_css %}
 
 {% block nav_menu_ul %}
 <!-- <ol class="breadcrumb">
@@ -58,14 +39,21 @@ Gautam Vamshawali : {{person.nepaliName}} Tree
         const ancestorsData = {{ ancestors_tree|safe }};
         const descendantsData = {{ descendants_tree|safe }};
 
+        // Combine ancestors and descendants into a single hierarchical structure
+        const rootData = {
+            name: "{{ person.nepaliName }}", // Person's name as root
+            gender: "{{ person.gender }}", // Person's gender
+            children: [{ name: "Ancestors", children: ancestorsData.children }, { name: "Childrens", children: descendantsData.children }]
+        };
+
         // Set the dimensions and margins of the diagram
-        const margin = {top: 20, right: 90, bottom: 30, left: 90},
+        const margin = { top: 20, right: 90, bottom: 30, left: 90 },
             width = window.innerWidth - margin.left - margin.right,
             height = 500 - margin.top - margin.bottom;
 
         // Append the svg object to the body of the page
         const svg = d3.select("#tree-container").append("svg")
-            .attr("width", width + margin.right + margin.left)
+            .attr("width", width*5 + margin.right + margin.left)
             .attr("height", height + margin.top + margin.bottom)
             .append("g")
             .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
@@ -78,7 +66,7 @@ Gautam Vamshawali : {{person.nepaliName}} Tree
         const treemap = d3.tree().size([height, width]);
 
         // Assigns parent, children, height, depth
-        root = d3.hierarchy(ancestorsData, function(d) { return d.children; });
+        root = d3.hierarchy(rootData, function(d) { return d.children; });
         root.x0 = height / 2;
         root.y0 = 0;
 
@@ -125,6 +113,9 @@ Gautam Vamshawali : {{person.nepaliName}} Tree
                 .attr('r', 1e-6)
                 .style("fill", function(d) {
                     return d._children ? "lightsteelblue" : "#fff";
+                })
+                .style("stroke", function(d) {
+                    return d.data.gender === "F" ? "pink" : "steelblue"; // Change stroke color based on gender
                 });
 
             // Add labels for the nodes
@@ -136,7 +127,12 @@ Gautam Vamshawali : {{person.nepaliName}} Tree
                 .attr("text-anchor", function(d) {
                     return d.children || d._children ? "end" : "start";
                 })
-                .text(function(d) { return d.data.name; });
+                .text(function(d) {
+                    if (d.data.name === "Ancestors") return "Ancestors";
+                    if (d.data.name === "Descendants") return "Descendants";
+                    if (d.data.name === "{{ person.nepaliName }}") return ""; // Hide person's node label
+                    return d.data.name;
+                });
 
             // UPDATE
             const nodeUpdate = nodeEnter.merge(node);
@@ -153,6 +149,9 @@ Gautam Vamshawali : {{person.nepaliName}} Tree
                 .attr('r', 10)
                 .style("fill", function(d) {
                     return d._children ? "lightsteelblue" : "#fff";
+                })
+                .style("stroke", function(d) {
+                    return d.data.gender === "F" ? "pink" : "steelblue"; // Change stroke color based on gender
                 })
                 .attr('cursor', 'pointer');
 
@@ -192,45 +191,44 @@ Gautam Vamshawali : {{person.nepaliName}} Tree
 
             // Transition back to the parent element position
             linkUpdate.transition()
-                .duration(duration)
-                .attr('d', function(d){ return diagonal(d, d.parent) });
+    .duration(duration)
+    .attr('d', function(d){ return diagonal(d, d.parent) });
 
-            // Remove any exiting links
-            const linkExit = link.exit().transition()
-                .duration(duration)
-                .attr('d', function(d) {
-                    const o = {x: source.x, y: source.y}
-                    return diagonal(o, o)
-                })
-                .remove();
+// Remove any exiting links
+const linkExit = link.exit().transition()
+    .duration(duration)
+    .attr('d', function(d) {
+        const o = {x: source.x, y: source.y}
+        return diagonal(o, o)
+    })
+    .remove();
 
-            // Store the old positions for transition.
-            nodes.forEach(function(d){
-                d.x0 = d.x;
-                d.y0 = d.y;
-            });
+// Store the old positions for transition.
+nodes.forEach(function(d){
+    d.x0 = d.x;
+    d.y0 = d.y;
+});
 
-            // Creates a curved (diagonal) path from parent to the child nodes
-            function diagonal(s, d) {
-                const path = `M ${s.y} ${s.x}
-                              C ${(s.y + d.y) / 2} ${s.x},
-                                ${(s.y + d.y) / 2} ${d.x},
-                                ${d.y} ${d.x}`;
+// Creates a curved (diagonal) path from parent to the child nodes
+function diagonal(s, d) {
+    const path = `M ${s.y} ${s.x}
+                C ${((s.y + d.y) / 2)} ${s.x},
+                ${((s.y + d.y) / 2)} ${d.x},
+                ${d.y} ${d.x}`;
+    return path;
+}
 
-                return path;
-            }
-
-            // Toggle children on click.
-            function click(event, d) {
-                if (d.children) {
-                    d._children = d.children;
-                    d.children = null;
-                } else {
-                    d.children = d._children;
-                    d._children = null;
-                }
-                update(d);
-            }
-        }
-    </script>
+// Toggle children on click.
+function click(event, d) {
+    if (d.children) {
+        d._children = d.children;
+        d.children = null;
+    } else {
+        d.children = d._children;
+        d._children = null;
+    }
+    update(d);
+}}
+</script>
 {% endblock %}
+

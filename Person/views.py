@@ -2,10 +2,14 @@ from django.shortcuts import get_object_or_404, redirect,render
 from django.views.generic import *
 from django.contrib.auth.mixins import LoginRequiredMixin
 from Person.models import Person,Suggestion,ContactDetail,PersonRelationship
-from django.db.models import Max
-from django.urls import reverse
+from django.urls import reverse,reverse_lazy
 from django.db.models import Q
-from django.http import JsonResponse
+from django.shortcuts import redirect
+from django.views.generic.edit import CreateView
+from django.urls import reverse_lazy
+from django.contrib.auth.mixins import LoginRequiredMixin
+from .models import Person
+from .forms import PersonRelationshipFormSet
 
 #HTML Templates
 person_create_template          = 'Person/create_person.html'
@@ -14,21 +18,23 @@ person_detail_template          = 'Person/detail_person.html'
 suggestion_create_template      = 'Suggestion/create_suggestion.html'
 suggestions_list_template       = 'Suggestion/list_suggestions.html'
 suggestion_detail_tempalte      = 'Suggestion/detail_suggestion.html'
+family_tree_template            = 'family_tree.html'
+search_form_template            = 'search_form.html'
 
-#Person
+#Person CURD
 class PersonsListView(ListView):
     model               = Person
     queryset            = Person.objects.all()
     template_name       = persons_list_template
     context_object_name = 'persons'
-    ordering            = ['-personId']
+    ordering            = ['id']
     paginate_by         = 50 
 
 class PersonCreateView(LoginRequiredMixin, CreateView):
     model = Person
     fields = ['name', 'nepaliName', 'gender', 'photo', 'birth', 'death', 'pustaNumber', 'aliveOrDead', 'bookReferenceNumber', 'remarks']
     template_name = person_create_template
-    success_url = "/"
+    success_url = reverse_lazy('list_persons')
 
     def get_form(self, form_class=None):
         form = super(PersonCreateView, self).get_form(form_class)
@@ -55,7 +61,7 @@ class PersonCreateView(LoginRequiredMixin, CreateView):
 class PersonUpdateView(LoginRequiredMixin,UpdateView): 
     model               = Person 
     fields              = ['name','nepaliName', 'gender', 'photo','birth','death','pustaNumber','aliveOrDead','bookReferenceNumber','address','cityOrCountry','contactDetails','emailAddress','remarks']
-    success_url         = "/"
+    success_url         = reverse_lazy('list_persons')
 
     def get_form(self, form_class=None):
         form = super(PersonUpdateView, self).get_form(form_class)
@@ -71,12 +77,13 @@ def PersonDetailView(request,pk):
     relationshipsA.extend(relationshipsB)
     return render(request,person_detail_template,{"person":person,"contactDetails":contactDetails,"relationships":relationshipsA})
 
-def delete_person(request, pk):
+def PersonDelete(request, pk):
     person = get_object_or_404(Person, pk=pk)
     person.delete()
     return redirect(reverse('list_persons')) 
 
 #Suggestion
+
 class SuggestionsListView(LoginRequiredMixin,ListView):
     model               = Suggestion
     queryset            = Suggestion.objects.all()
@@ -87,13 +94,13 @@ class SuggestionsListView(LoginRequiredMixin,ListView):
 
 class SuggestionCreateView(CreateView):
     model               = Suggestion
-    fields              = ['primaryPerson', 'suggestion', 'name','contactOption','contactDetail']
+    fields              = ['primaryPerson', 'suggestion','photo', 'suggestorName','suggestorContactOption','suggestorContactDetail']
     template_name       = suggestion_create_template
-    success_url         = "/"
+    success_url         = reverse_lazy('list_persons')
 
     def get_initial(self):
         initial = super().get_initial()
-        person_id = self.kwargs.get('personid')
+        person_id = self.kwargs.get('pk')
         if person_id:
             person = get_object_or_404(Person, pk=person_id)
             initial['primaryPerson'] = person
@@ -107,8 +114,8 @@ class SuggestionCreateView(CreateView):
     
 class SuggestionUpdateView(LoginRequiredMixin,UpdateView): 
     model               = Suggestion 
-    fields              = ['primaryPerson', 'suggestion', 'name','contactOption','contactDetail']
-    success_url         = "/"
+    fields              = ['primaryPerson', 'suggestion','photo', 'suggestorName','suggestorContactOption','suggestorContactDetail']
+    success_url         = reverse_lazy('list_suggestions')
 
     def get_form(self, form_class=None):
         form = super(SuggestionUpdateView, self).get_form(form_class)
@@ -120,241 +127,52 @@ def SuggestionDetailView(request,pk):
     suggestion = get_object_or_404(Suggestion, pk=pk)
     return render(request,suggestion_detail_tempalte,{"suggestion":suggestion})
 
-def delete_suggestion(request, pk):
+def SuggestionDelete(request, pk):
     suggestion = get_object_or_404(Suggestion, pk=pk)
     suggestion.delete()
-    return redirect("/") 
+    return redirect(reverse('list_suggestions')) 
 
-def csvDataLoad(request):
-
-    import csv
-    from indic_transliteration import sanscript
-
-    filename = 'data.csv'
-
-    # List to hold the processed data
-    data = []
-
-    # Function to load the CSV and process rows
-    def load_csv(filename):
-        with open(filename, mode='r', newline='') as file:
-            csvreader = csv.reader(file)
-            
-            # Skip the header row if there's one
-            header = next(csvreader)
-            
-            # Variable to keep track of the current parent row data
-            current_parent_row = None
-            
-            for row in csvreader:
-                if row[0].strip():  # Check if the first column is not empty
-                    # Separate out the 9th column data
-                    primary_data = [row[5], row[6], row[7]]
-                    current_parent_row = row[:5] + [[primary_data]] + row[8:]
-                    data.append(current_parent_row)
-                elif row[0].strip() == '' and any(row[i].strip() for i in [5, 6, 7]):  # Check if the first column is empty and any of 6th, 7th, or 8th column is not empty
-                    if current_parent_row is not None:
-                        additional_data = [row[5], row[6], row[7]]  # Collect the 6th, 7th, and 8th column data
-                        current_parent_row[5].append(additional_data)
-
-    # Call the function to load and process the CSV
-    load_csv(filename)
-
-
-    def nepali_to_roman(nepali_name):
-        roman_nepali_name = sanscript.transliterate(nepali_name, sanscript.DEVANAGARI, sanscript.IAST)
-        return roman_nepali_name
-
-
-    def process_spouse_value(value):
-        # Check if the value is equal to "......."
-        if value == ".......":
-            return ["Unknown"]
-        
-        # Check if the value contains "," and/or " र " and split accordingly
-        if "," in value or " र " in value:
-            # Split by comma if present
-            if "," in value:
-                value_list = value.split(",")
-            else:
-                value_list = [value]
-
-            # Split each part by " र " if present
-            processed_values = []
-            for part in value_list:
-                if " र " in part:
-                    processed_values.extend(part.split(" र "))
-                else:
-                    processed_values.append(part)
-            
-            # Remove "." and whitespace from each processed value
-            processed_values = [v.replace(".", "").strip() for v in processed_values]
-            
-            return processed_values
-        
-        # Return the original value if none of the conditions are met
-        return [value]
-
-    def get_max_and_increment():
-        # Get the maximum value of the variable in all objects
-        max_value = Person.objects.aggregate(Max('personId'))['personId__max']
-        # Check if there are any objects in the database
-        if max_value is not None:
-            # Increment the maximum value by 1
-            max_value += 1
-        else:
-            # If there are no objects, start from 1
-            max_value = 1
-
-        return max_value
-
-    row_count = 0
-    total_rows = len(data)
-
-    for row in data:
-        row_count += 1
-        newPerson = Person()
-        newPerson.personId = get_max_and_increment()
-        newPerson.name = nepali_to_roman(row[0])
-        newPerson.nepaliName = row[0]
-        newPerson.gender = row[1]
-        newPerson.pustaNumber = row[3]
-        newPerson.bookReferenceNumber = row[4]
-        newPerson.address = row[6]
-        newPerson.cityOrCountry = row[7]
-        newPerson.contactDetails = row[8]
-        newPerson.emailAddress = row[9]
-        if row[10] == "N":
-            newPerson.aliveOrDead   = "Dead"
-        elif row[10] == "Y":
-            newPerson.aliveOrDead   = "Alive"
-        else:
-            newPerson.aliveOrDead   = "Unkown"
-        newPerson.save()
-
-        spouses = process_spouse_value(row[2]) 
-        childrens = row[5] 
-
-        for spouse in spouses:
-            if spouse != "Unknown" and spouse!="":
-                newSpouse = Person()
-                newSpouse.name = nepali_to_roman(spouse)
-                newSpouse.nepaliName = spouse
-                if newPerson.gender == "M":
-                    newSpouse.gender = "F"
-                else:
-                    newSpouse.gender = "M"
-                newSpouse.personId  = 0
-                newSpouse.pustaNumber = newPerson.pustaNumber
-                newSpouse.save()
-
-                newSpouseRelation = PersonRelationship()
-                newSpouseRelation.primaryPerson = newSpouse
-                newSpouseRelation.secondaryPerson = newPerson
-                newSpouseRelation.relation = "Spouse"
-                newSpouseRelation.save()
-
-        for child in childrens:
-            if child[0] != "निसन्तान" and child[2] == "******" and child[0] != "":
-                newChild = Person()
-                newChild.name = nepali_to_roman(child[0])
-                newChild.nepaliName = child[0]
-                newChild.gender = child[1]
-                if newPerson.gender == "M":
-                    newChild.pustaNumber = int(newPerson.pustaNumber)+1
-                else:
-                    newChild.pustaNumber = int(newPerson.pustaNumber)+1
-                    newChild.personId = 0
-                newChild.save()
-
-                newChildRelation = PersonRelationship()
-                newChildRelation.primaryPerson = newChild
-                newChildRelation.secondaryPerson = newPerson
-                newChildRelation.relation = "Child"
-                newChildRelation.save()
-
-    for row in data:
-        selectedPersons = Person.objects.filter(bookReferenceNumber = row[4])
-        selectedPerson = selectedPersons[0]
-
-        childrens = row[5] 
-
-        for child in childrens:
-            try:
-                if child[0] != "निसन्तान" and child[2] != "******" and child[0] != "" and child[2] != "":
-                    bookReferenceNumber = child[2]
-                    selectedChild = Person.objects.filter(bookReferenceNumber = bookReferenceNumber)
-
-                    selectedChild = selectedChild[0]
-                    newChildRelation = PersonRelationship()
-                    newChildRelation.primaryPerson = selectedChild
-                    newChildRelation.secondaryPerson = selectedPerson
-                    newChildRelation.relation = "Child"
-                    newChildRelation.save()
-
-            except:pass
-
-    return redirect(reverse('list_persons'))     
-
+#Search Functionality
 
 class SearchView(View):
-    def get(self,request,*args,**kwargs):
+    def get(self, request, *args, **kwargs):
+        return render(request, search_form_template)
 
-        return render(request,'search_form.html')
+    def post(self, request, *args, **kwargs):
+        person_filters = {}
+        person_filters['name__icontains'] = request.POST.get('personName')
+        person_filters['pustaNumber'] = request.POST.get('personPustaNumber')
+        person_filters['bookReferenceNumber'] = request.POST.get('personBookReferenceNumber')
+        person_filters['contactDetails__icontains'] = request.POST.get('personContactDetail')
+        person_filters['id'] = request.POST.get('personId')
 
-    def post(self,request,*args,**kwargs):
-        foundPersons = []
-        personName = request.POST.get('personName')
-        personPustaNumber = request.POST.get('personPustaNumber')
-        personGrandfatherName = request.POST.get('personGrandfatherName')
-        personBookReferenceNumber = request.POST.get('personBookReferenceNumber')
-        personContactDetail = request.POST.get('personContactDetail')
-        personId = request.POST.get('personId')
-        isGautamVamsha = request.POST.get('isGautamVamsha')
+        is_gautam_vamsha = request.POST.get('isGautamVamsha')
+
         persons = Person.objects.all()
-        try:
-            if personName != "" and personName != None:
-                persons = persons.filter(Q(name__icontains=personName) | Q(nepaliName__icontains=personName) )
-        except:pass
 
-        try:
-            if personPustaNumber != "" and personPustaNumber != None:
-                persons = persons.filter(pustaNumber = int(personPustaNumber))
-        except:pass
+        for key, value in person_filters.items():
+            if value is not None and value != "":
+                if key == 'pustaNumber' or key == 'id':
+                    persons = persons.filter(**{key: int(value)})
+                else:
+                    persons = persons.filter(**{key: value})
 
-        try:
-            if personBookReferenceNumber != "" and personBookReferenceNumber != None:
-                persons = persons.filter(bookReferenceNumber=personBookReferenceNumber)
-        except:pass
+        if is_gautam_vamsha == "on":
+            persons = persons.filter(personId__gt=0)
 
-        try:
-            if personContactDetail != "" and personContactDetail != None:
-                persons = persons.filter(contactDetails__icontains = personContactDetail)
-        except:pass
+        found_persons = list(persons)
 
-        try:
-            if personId != ""  and personId != None:
-                persons = persons.filter(id = int(personId))
-        except:pass
+        return render(request, persons_list_template, {'persons': found_persons})
 
-        try:
-            if personGrandfatherName != "" and personGrandfatherName != None:
+#Utility Functions
 
-                # persons = [person for person in persons if person.get_parents[0].secondaryPerson.get_parents[0].nepaliName=="खगेन्द्रप्रसाद/खडानन्द" ]
-                pass 
-        except:pass
+def csvDataLoad(request):
+    from .utility_functions import csv_data_load
+    return redirect(reverse('list_persons'))
 
-        try:
-            if isGautamVamsha != ""  and isGautamVamsha != None:
-                if isGautamVamsha == "on":
-                    persons = persons.filter(personId__gt = 0)
-        except:pass
+#Family Tree
 
-
-        foundPersons = list(persons)
-        return render(request,persons_list_template,{'persons':foundPersons})
-    
-def build_ancestor_tree(person, max_depth=10, current_depth=0):
+def build_descendant_tree(person, max_depth=5, current_depth=0):
     if current_depth > max_depth:
         return None
 
@@ -365,7 +183,7 @@ def build_ancestor_tree(person, max_depth=10, current_depth=0):
     parent_list = []
     for parent_relation in parents:
         parent = parent_relation.primaryPerson
-        parent_tree = build_ancestor_tree(parent, max_depth, current_depth + 1)
+        parent_tree = build_descendant_tree(parent, max_depth, current_depth + 1)
         if parent_tree:
             parent_list.append(parent_tree)
 
@@ -375,9 +193,9 @@ def build_ancestor_tree(person, max_depth=10, current_depth=0):
         'children': parent_list
     }
 
-def build_descendant_tree(person, max_depth=10, current_depth=0):
-    if current_depth > max_depth:
-        return None
+def build_ancestor_tree(person, max_depth=10, current_depth=0):
+    # if current_depth > max_depth:
+    #     return None
 
     children = PersonRelationship.objects.filter(
         primaryPerson=person, relation='Child'
@@ -386,7 +204,7 @@ def build_descendant_tree(person, max_depth=10, current_depth=0):
     children_list = []
     for child_relation in children:
         child = child_relation.secondaryPerson
-        child_tree = build_descendant_tree(child, max_depth, current_depth + 1)
+        child_tree = build_ancestor_tree(child, max_depth, current_depth + 1)
         if child_tree:
             children_list.append(child_tree)
 
@@ -406,7 +224,7 @@ def family_tree(request, pk):
         'ancestors_tree': ancestors_tree,
         'descendants_tree': descendants_tree,
     }
-    return render(request, 'family_tree.html', context)
+    return render(request, family_tree_template, context)
 
 
 

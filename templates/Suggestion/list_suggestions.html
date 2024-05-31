@@ -1,74 +1,104 @@
 {% extends 'base.html' %}
 
 {% block page_title %}
-Gautam Vamshawali : Suggestions
+    Gautam Vamshawali : Suggestions
 {% endblock page_title %}
 
+<!-- Add Person If Authenticated -->
 {% block nav_menu %}
-    <a class="nav-link " href="{% url 'create_person' %}"><button type="button" class="btn btn-outline-success"><i class="bi bi-plus-circle-fill"></i> Person</button></a>
+    <a class="nav-link " href="{% url 'create_person' %}">
+        <button type="button" class="btn btn-outline-success">
+            <i class="bi bi-plus-circle-fill"></i> Person
+        </button>
+    </a>
 {% endblock %}
 
 {% block page_content %}
 
-<input type="text" id="searchInput" class="form-control mr-sm-2" onkeyup="filterSuggestions()" placeholder="Search by ID">
-<br>
-<table class="table table-striped" id="suggestionTable"> 
+    <table class="table table-striped" id="suggestionTable"> 
 
-    <thead class="table-dark">
-        <tr>
-            <th scope="col">ID</th>
-            <th scope="col">Person</th>
-            <th scope="col">BRN</th>
-            <th scope="col">Suggestion</th>
-            <th scope="col">Name of Suggester</th>
-            <th scope="col">Contact Option</th>
-            <th scope="col">Contact Detail</th>
-            <th scope="col">Created On</th>
-            <th scope="col"></th>
-            <th scope="col"></th>
-        </tr>
-    </thead>
+        <thead class="table-dark">
+            <tr>
+                <th scope="col">ID</th>
+                <th scope="col">Person</th>
+                <th scope="col">BRN</th>
+                <th scope="col">Suggestion</th>
+                <th scope="col">Photo</th>
+                <th scope="col">Name of Suggester</th>
+                <th scope="col">Contact Option</th>
+                <th scope="col">Contact Detail</th>
+                <th scope="col">Created On</th>
+                <th scope="col"></th>
+                <th scope="col"></th>
+            </tr>
+        </thead>
 
-{% for suggestion in suggestions %}
+        {% for suggestion in suggestions %}
 
-    <tr>
-        <th scope="row">{{ suggestion.id }}</th>
-        <td><a href="{{suggestion.primaryPerson.get_absolute_url}}">{{ suggestion.primaryPerson.nepaliName }}</a></td>
-        <td>{{ suggestion.primaryPerson.bookReferenceNumber }}</td>
-        <td>{{ suggestion.suggestion }}</td>
-        <td>{{suggestion.name}}</td>
-        <td>{{suggestion.contactOption}}</td>
-        <td>{{suggestion.contactDetail}}</td>
-        <td>{{suggestion.created_on}}</td>
-        <td><a href="{% url 'update_suggestion' suggestion.id%}"><button type="button" class="btn btn-primary"><i class="bi bi-pencil-square"></i> Edit</button></a></td>
-        <td><a href="{% url 'delete_suggestion' suggestion.id%}"><button type="button" class="btn btn-danger"><i class="bi bi-trash"></i> Delete</button></a></td>
-    </tr>
+            <tr>
+                <th scope="row">{{ suggestion.id }}</th>
+                <td><a href="{{suggestion.primaryPerson.get_absolute_url}}">{{ suggestion.primaryPerson.nepaliName }}</a></td>
+                <td>{{ suggestion.primaryPerson.bookReferenceNumber }}</td>
+                <td>{{ suggestion.suggestion }}</td>
+                <td>
+                    {% if suggestion.photo %}  <!-- Check if suggestion object has a photo and add View Photo Button or No Button Text -->
+                    <button class="btn btn-primary view-photo-btn" data-toggle="modal" data-target="#imageModal" data-src="{{ suggestion.photo.url }}" data-name="{{ suggestion.primaryPerson.nepaliName }}">
+                        <i class="bi bi-image"></i> View Photo
+                    </button>
+                    {% else %}
+                    <i class="bi bi-image"></i> No Photo
+                    {% endif %}
+                </td>
+                <td>{{suggestion.suggestorName}}</td>
+                <td>{{suggestion.suggestorContactOption}}</td>
+                <td>{{suggestion.suggestorContactDetail}}</td>
+                <td>{{suggestion.created_on}}</td>
+                <td>
+                    <a href="{% url 'update_suggestion' suggestion.id%}">
+                        <button type="button" class="btn btn-primary">
+                            <i class="bi bi-pencil-square"></i> Edit
+                        </button>
+                    </a>
+                </td>
+                <td>
+                    <a href="{% url 'delete_suggestion' suggestion.id%}">
+                        <button type="button" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> Delete
+                        </button>
+                    </a>
+                </td>
+            </tr>
 
-{% endfor %}
+        {% endfor %}
+    </table>
 
-</table>
+    <!-- View Image Popup Modal -->
+    <div class="modal fade" id="imageModal" tabindex="-1" role="dialog" aria-labelledby="imageModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="imageModalLabel">Person's Photo</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <img src="#" id="modalImage" class="img-fluid" alt="Image">
+                </div>
+            </div>
+        </div>
+    </div>
 
-<script>
-    function filterSuggestions() {
-        var input, filter, table, tr, td, i, txtValue;
-        input = document.getElementById('searchInput');
-        filter = input.value.toLowerCase();
-        table = document.getElementById('suggestionTable');
-        tr = table.getElementsByTagName('tr');
-        
-        // Loop through all table rows, and hide those who don't match the search query
-        for (i = 1; i < tr.length; i++) {
-            td = tr[i].getElementsByTagName('th')[0]; // Get the first column only
-            if (td) {
-                txtValue = td.textContent || td.innerText;
-                if (txtValue.toLowerCase().indexOf(filter) > -1) {
-                    tr[i].style.display = '';
-                } else {
-                    tr[i].style.display = 'none';
-                }
-            }
-        }
-    }
+    <script>
+        // View Image Popup Script
+        $(document).ready(function() {
+            $('.view-photo-btn').click(function() 
+            {
+                var imageUrl = $(this).data('src');
+                var personName = $(this).data('name');
+                $('#modalImage').attr('src', imageUrl);
+                $('#imageModalLabel').text(personName + "'s Photo");
+            });
+        });
     </script>
-
 {% endblock page_content %}

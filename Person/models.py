@@ -38,8 +38,37 @@ class Person(models.Model):
     last_edited_by      = models.ForeignKey(User,on_delete=models.DO_NOTHING,default=1)
 
     def __str__(self):
-        return str(self.nepaliName+"- पुस्ता:"+str(self.pustaNumber))
+        parent_name = ""
+        grandfather_name = ""
+        
+        if self.gender == 'M':
+            relationAttribute = ["छोरा","नाती"]
+        elif self.gender == 'F':
+            relationAttribute = ["छोरी","नातिनी"]
 
+        # Fetching the father's name
+        father_relation = PersonRelationship.objects.filter(primaryPerson=self, relation='Child').select_related('secondaryPerson').first()
+        if father_relation:
+            parent_name = father_relation.secondaryPerson.nepaliName
+            # Fetching the grandfather's name
+            grandfather_relation = PersonRelationship.objects.filter(primaryPerson=father_relation.secondaryPerson, relation='Child').select_related('secondaryPerson').first()
+            if grandfather_relation:
+                grandfather_name = grandfather_relation.secondaryPerson.nepaliName
+
+        # If no father is found, try to find mother
+        if not parent_name:
+            mother_relation = PersonRelationship.objects.filter(secondaryPerson=self, relation='Child').select_related('primaryPerson').first()
+            if mother_relation:
+                father_relation = PersonRelationship.objects.filter(primaryPerson=mother_relation.primaryPerson, relation='Child').select_related('secondaryPerson').first()
+                if father_relation:
+                    parent_name = father_relation.secondaryPerson.nepaliName
+                    # Fetching the grandfather's name
+                    grandfather_relation = PersonRelationship.objects.filter(primaryPerson=father_relation.secondaryPerson, relation='Child').select_related('secondaryPerson').first()
+                    if grandfather_relation:
+                        grandfather_name = grandfather_relation.secondaryPerson.nepaliName
+        
+        return f"{grandfather_name} को {relationAttribute[1]}, {parent_name} को {relationAttribute[0]}, {self.nepaliName} : पुस्ता - {self.pustaNumber}"
+    
     def get_absolute_url(self):
         from django.urls import reverse
         return reverse('detail_person',kwargs={'pk':self.id})
@@ -51,11 +80,10 @@ class Person(models.Model):
         else: return "No Birth Date Provided"
 
     def get_spouses(self):
-        spousesA = PersonRelationship.objects.filter(primaryPerson=self,relation="Spouse")
+        spousesA = PersonRelationship.objects.filter(primaryPerson=self,relation="Spouse").select_related('secondaryPerson')
         spousesA = [spouse.secondaryPerson for spouse in spousesA]
-        spousesB = PersonRelationship.objects.filter(secondaryPerson=self,relation="Spouse")
+        spousesB = PersonRelationship.objects.filter(secondaryPerson=self,relation="Spouse").select_related('primaryPerson')
         spousesB = [spouse.primaryPerson for spouse in spousesB]
-
         spousesA.extend(spousesB)
         return spousesA
     
@@ -65,18 +93,14 @@ class Person(models.Model):
 
     def get_childrens(self):
         childs = []
-
-
         children = PersonRelationship.objects.filter(secondaryPerson=self, relation='Child').select_related('primaryPerson')
         for child_relation in children:
             child = child_relation.primaryPerson
             childs.append(child)
-        
         return childs
 
     def get_descendants(self):
         descendants = []
-
         def fetch_descendants(person):
             children = PersonRelationship.objects.filter(secondaryPerson=person, relation='Child').select_related('primaryPerson')
             for child_relation in children:
@@ -89,7 +113,6 @@ class Person(models.Model):
 
     def get_ancestors(self, max_depth=10):
         ancestors = []
-
         def fetch_ancestors(person,depth):
             if depth > 0:
                 parents = PersonRelationship.objects.filter(primaryPerson=person, relation='Child').select_related('secondaryPerson')
@@ -100,7 +123,8 @@ class Person(models.Model):
 
         fetch_ancestors(self, max_depth)
         return ancestors
-    
+
+
 class PersonRelationship(models.Model):
     RELATIONSHIP_CHOICES = [
         ('Child',"Child"),
@@ -111,8 +135,37 @@ class PersonRelationship(models.Model):
     secondaryPerson     = models.ForeignKey(Person,on_delete=models.CASCADE,related_name='secondary_person')
 
     def __str__(self):
-        return str(self.primaryPerson.name+" is "+self.relation+" of "+self.secondaryPerson.name)
-    
+        primary_person = self.primaryPerson
+        secondary_person = self.secondaryPerson
+
+
+        # Fetching primary person's father and grandfather
+        primary_father_name = ""
+        primary_grandfather_name = ""
+        primary_father_relation = PersonRelationship.objects.filter(primaryPerson=primary_person, relation='Child').select_related('secondaryPerson').first()
+        if primary_father_relation:
+            primary_father_name = primary_father_relation.secondaryPerson.nepaliName
+            primary_grandfather_relation = PersonRelationship.objects.filter(primaryPerson=primary_father_relation.secondaryPerson, relation='Child').select_related('secondaryPerson').first()
+            if primary_grandfather_relation:
+                primary_grandfather_name = primary_grandfather_relation.secondaryPerson.nepaliName
+
+        # Fetching secondary person's father and grandfather
+        secondary_father_name = ""
+        secondary_grandfather_name = ""
+        secondary_father_relation = PersonRelationship.objects.filter(primaryPerson=secondary_person, relation='Child').select_related('secondaryPerson').first()
+        if secondary_father_relation:
+            secondary_father_name = secondary_father_relation.secondaryPerson.nepaliName
+            secondary_grandfather_relation = PersonRelationship.objects.filter(primaryPerson=secondary_father_relation.secondaryPerson, relation='Child').select_related('secondaryPerson').first()
+            if secondary_grandfather_relation:
+                secondary_grandfather_name = secondary_grandfather_relation.secondaryPerson.nepaliName
+        
+        if self.primaryPerson.personId is 0:
+            return f"{primary_person.nepaliName} is {self.relation} of {secondary_person.nepaliName} Father: {secondary_father_name} Grandfather: {secondary_grandfather_name}"
+        elif self.secondaryPerson.personId is 0:
+            return f"{primary_person.nepaliName} Father: {primary_father_name} Grandfather: {primary_grandfather_name} is {self.relation} of {secondary_person.nepaliName}"
+        else:
+            return f"{primary_person.nepaliName} Father: {primary_father_name} Grandfather: {primary_grandfather_name} is {self.relation} of {secondary_person.nepaliName} Father: {secondary_father_name} Grandfather: {secondary_grandfather_name}"
+
 class ContactDetail(models.Model):
     CONTACT_CHOICES =[
         ('Facebook',"Facebook"),
@@ -129,7 +182,8 @@ class ContactDetail(models.Model):
 
     def __str__(self):
         return str(self.primaryPerson.name+" "+self.contactOption+" is "+self.contactDetail)
-    
+
+
 class Suggestion(models.Model):
     CONTACT_CHOICES =[
         ('Facebook',"Facebook"),
@@ -140,13 +194,14 @@ class Suggestion(models.Model):
         ('Email',"Email")
     ]
 
-    primaryPerson       = models.ForeignKey(Person,on_delete=models.CASCADE)
-    suggestion          = models.CharField(max_length=200)
+    primaryPerson           = models.ForeignKey(Person,on_delete=models.CASCADE)
+    suggestion              = models.CharField(max_length=200)
+    photo                   = models.ImageField(upload_to="suggestion/person/images",max_length=200,blank=True,null=True)
 
-    name                = models.CharField(max_length=100,blank=True)
-    contactOption       = models.CharField(max_length=15,choices=CONTACT_CHOICES,blank=True,default=None)
-    contactDetail       = models.CharField(max_length=100,blank=True)
+    suggestorName           = models.CharField(max_length=100,blank=True)
+    suggestorContactOption  = models.CharField(max_length=15,choices=CONTACT_CHOICES,blank=True,default=None)
+    suggestorContactDetail  = models.CharField(max_length=100,blank=True)
 
-    created_on          = models.DateTimeField(auto_now_add=True)
-    last_edited_on      = models.DateTimeField(auto_now=True)
-    last_edited_by      = models.ForeignKey(User,on_delete=models.DO_NOTHING,default=1)    
+    created_on              = models.DateTimeField(auto_now_add=True)
+    last_edited_on          = models.DateTimeField(auto_now=True)
+    last_edited_by          = models.ForeignKey(User,on_delete=models.DO_NOTHING,default=1)    

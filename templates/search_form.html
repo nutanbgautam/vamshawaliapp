@@ -1,38 +1,40 @@
 {% extends 'base.html' %}
 
 {% block page_title %}
-Gautam Vamshawali : {{person.nepaliName}} Tree
+  Gautam Vamshawali : Search People
 {% endblock page_title %}
 
 {% block page_content %}
-<form action="{% url 'search' %}" method="POST">
-    {% csrf_token %}
-    <div class="form-group">
-      <label for="personNameSearch">Name</label>
-      <input name="personName" type="text" class="form-control" id="personNameSearch">
-      <small id="personNameEntryInfo" class="form-text text-muted">Can be Nepali or Roman Nepali</small>
-    </div>
-    <div class="form-group">
-      <label for="personPustaNumberSearch">Pusta Number</label>
-      <input name="personPustaNumber" type="text" class="form-control" id="personPustaNumberSearch">
-    </div>
-    <div class="form-group">
-        <label for="personGrandfatherNameSearch">Grandfather Name</label>
-        <input name="personGrandfatherName" type="text" class="form-control" id="personGrandfatherNameSearch">
+<div class="container-fluid">
+  <form action="{% url 'search' %}" method="POST">
+      {% csrf_token %}
+      <div class="form-group">
+        <label for="personNameSearch">Name</label>
+        <input name="personName" type="text" class="form-control" id="personNameSearch">
+        <small id="personNameEntryInfo" class="form-text text-muted">Can be Nepali or Roman Nepali</small>
       </div>
       <div class="form-group">
-        <label for="personBookReferenceNumberSearch">Book Reference Number</label>
-        <input name="personBookReferenceNumber" type="text" class="form-control" id="personBookReferenceNumberSearch">
+        <label for="personPustaNumberSearch">Pusta Number</label>
+        <input name="personPustaNumber" type="text" class="form-control" id="personPustaNumberSearch">
       </div>
       <div class="form-group">
-        <label for="personContactDetailSearch">Contact Detail</label>
-        <input name="personContactDetail" type="text" class="form-control" id="personContactDetailSearch">
-      </div>
-      <div class="form-check form-switch">
-        <input name="isGautamVamsha" type="checkbox" class="form-check-input" role="switch" id="onlyGautamVamshaToogle" checked>
-        <label class="form-check-label" for="onlyGautamVamshaToogle">Only Gautam Vamsha</label>
-      </div>
-      <br>
-    <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> Search</button>
-</form>
+          <label for="personGrandfatherNameSearch">Grandfather Name</label>
+          <input name="personGrandfatherName" type="text" class="form-control" id="personGrandfatherNameSearch">
+        </div>
+        <div class="form-group">
+          <label for="personBookReferenceNumberSearch">Book Reference Number</label>
+          <input name="personBookReferenceNumber" type="text" class="form-control" id="personBookReferenceNumberSearch">
+        </div>
+        <div class="form-group">
+          <label for="personContactDetailSearch">Contact Detail</label>
+          <input name="personContactDetail" type="text" class="form-control" id="personContactDetailSearch">
+        </div>
+        <div class="form-check form-switch">
+          <input name="isGautamVamsha" type="checkbox" class="form-check-input" role="switch" id="onlyGautamVamshaToogle" checked>
+          <label class="form-check-label" for="onlyGautamVamshaToogle">Search Only in Gautam Vamsha</label>
+        </div>
+        <br>
+      <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> Search</button>
+  </form>
+</div>
 {% endblock %}

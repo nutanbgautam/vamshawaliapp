@@ -5,27 +5,25 @@ Gautam Vamshawali: Create Suggestion
 {% endblock page_title %}
 
 {% block page_content %}
-<div class="container">
-<form method="POST" enctype="multipart/form-data">
-    <!-- Security token -->
-    {% csrf_token %}
-    <!-- Using the formset -->
-    {{ form.as_div }}
-    <br>
-    <input class="btn btn-primary" type="submit" value="Add New">
-</form>
-</div>
-<script>
-    document.getElementById("id_billing_date").type="date"
-    document.getElementById("id_delivery_date").type="date"
-    var forms = document.getElementsByTagName('form');
-    var divs = forms[0].getElementsByTagName('div');
-    // Loop through the div elements and add the "form-group" class
-    for (var current_div = 0; current_div < divs.length; current_div++) 
-    {
-        divs[current_div].classList.add('form-group');
-    }
 
-</script>
+    <div class="container-fluid">
+        <form method="POST" enctype="multipart/form-data">
+            <!-- Security token -->
+            {% csrf_token %}
+            <!-- Using the formset -->
+            {{ form.as_div }}
+            <br>
+            <input class="btn btn-primary" type="submit" value="Add Suggestion">
+        </form>
+    </div>
+    <script>
+        var forms = document.getElementsByTagName('form');
+        var divs = forms[0].getElementsByTagName('div');
+        // Loop through the div elements and add the "form-group" class
+        for (var current_div = 0; current_div < divs.length; current_div++) 
+        {
+            divs[current_div].classList.add('form-group');
+        }
+    </script>
 
 {% endblock page_content %}
