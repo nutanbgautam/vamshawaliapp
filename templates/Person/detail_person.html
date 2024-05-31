@@ -1,0 +1,387 @@
+{% extends 'base.html' %}
+
+{% block page_title %}
+Gautam Vamshawali : {{person.name}} Detail
+{% endblock page_title %}
+
+{% block nav_menu %}
+{% if user.is_authenticated %}
+    <a class="nav-link " href="{% url 'create_person' %}"><button type="button" class="btn btn-outline-success"><i class="bi bi-plus-circle-fill"></i> Person</button></a>
+{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+body{margin-top:20px;
+    background-color:#f2f6fc;
+    color:#69707a;
+    }
+    .img-account-profile {
+        height: 10rem;
+    }
+    .rounded-circle {
+        border-radius: 50% !important;
+    }
+    .card {
+        box-shadow: 0 0.15rem 1.75rem 0 rgb(33 40 50 / 15%);
+    }
+    .card .card-header {
+        font-weight: 500;
+    }
+    .card-header:first-child {
+        border-radius: 0.35rem 0.35rem 0 0;
+    }
+    .card-header {
+        padding: 1rem 1.35rem;
+        margin-bottom: 0;
+        background-color: rgba(33, 40, 50, 0.03);
+        border-bottom: 1px solid rgba(33, 40, 50, 0.125);
+    }
+    .form-control, .dataTable-input {
+        display: block;
+        width: 100%;
+        padding: 0.875rem 1.125rem;
+        font-size: 0.875rem;
+        font-weight: 400;
+        line-height: 1;
+        color: #69707a;
+        background-color: #fff;
+        background-clip: padding-box;
+        border: 1px solid #c5ccd6;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        border-radius: 0.35rem;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+    
+    .nav-borders .nav-link.active {
+        color: #0061f2;
+        border-bottom-color: #0061f2;
+    }
+    .nav-borders .nav-link {
+        color: #69707a;
+        border-bottom-width: 0.125rem;
+        border-bottom-style: solid;
+        border-bottom-color: transparent;
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
+        padding-left: 0;
+        padding-right: 0;
+        margin-left: 1rem;
+        margin-right: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block page_content %}
+
+<div class="container-xl px-4 mt-4">
+    <div class="row">
+        <div class="col-xl-4">
+            <!-- Person picture card-->
+            <div class="card mb-4 mb-xl-0">
+                <div class="card-header">Picture</div>
+                <div class="card-body text-center">
+                    {% if person.photo %}
+                    <img class="img-account-profile rounded-circle mb-2" src="{{person.photo.url}}" alt="">
+                    {% else %}
+                    <img class="img-account-profile rounded-circle mb-2" src="https://www.shutterstock.com/image-vector/default-avatar-profile-icon-social-600nw-1677509740.jpg" alt="">
+                    {% endif %}
+                    {% if user.is_authenticated %}
+                    <br>
+                    <center>
+                    <button class="btn btn-primary"><a href="{% url 'update_person' person.id%}"><i class="bi bi-pencil-square" style="color:white;"></i></a></button>
+                    <button class="btn btn-danger"><a href="{% url 'delete_person' person.id%}"><i class="bi bi-trash" style="color:white;"></i></a></button></center>
+                    {% endif %}
+                    {% if not user.is_authenticated %}
+                    <center><button type="button" class="btn btn-info"><a href="{% url 'create_suggestion' person.id%}" style="color:white;"><i class="bi bi-pencil-square"></i> Suggest Edit</a></button></center>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-8">
+            <!-- Person details card-->
+            <div class="card mb-4">
+                <div class="card-header">Person Details</div>
+                <div class="card-body">
+                    <form>
+                        <!-- Form Group-->
+                        <div class="mb-3">
+                            <label class="small mb-1" for="personName">Name</label>
+                            <input class="form-control" id="personName" type="text" placeholder="" value="{{person.nepaliName}}" readonly>
+                        </div>
+                        <!-- Form Row        -->
+                        <div class="row gx-3 mb-3">
+                            <!-- Form Group-->
+                            <div class="col-md-6">
+                                <label class="small mb-1" for="personPustaNumber">Pusta Number</label>
+                                <input class="form-control" id="personPustaNumber" type="text" value="{{person.pustaNumber}}" readonly>
+                            </div>
+                            {% if person.bookReferenceNumber %}
+                            <!-- Form Group-->
+                            <div class="col-md-6">
+                                <label class="small mb-1" for="personPustaNumber">Book Refence Number</label>
+                                <input class="form-control" id="personPustaNumber" type="text" value="{{person.bookReferenceNumber}}" readonly>
+                            </div>
+                            {% else %}
+                                <!-- Form Group-->
+                                <div class="col-md-6">
+                                <label class="small mb-1" for="personPustaNumber"></label>
+                                {% if person.get_parents|length > 0 %}
+                                {% for parent in person.get_parents %}
+                                    {% if parent.secondaryPerson.gender == 'F' %}
+                                        {% if person.gender == 'M' %}
+                                        <input class="form-control" id="personPustaNumber" type="text" value="भान्जा" readonly>
+                                        {% elif person.gender == 'F' %}
+                                        <input class="form-control" id="personPustaNumber" type="text" value="भान्जी" readonly>
+                                        {% endif %}
+                                    {% endif %}
+                                {% endfor %}
+                            {% elif person.get_spouses|length > 0 %}
+                                {% if person.gender == 'M' %}
+                                <input class="form-control" id="personPustaNumber" type="text" value="ज्वाँई" readonly>
+                                {% elif person.gender == 'F' %}
+                                <input class="form-control" id="personPustaNumber" type="text" value="बुहारी" readonly>
+                                {% endif %}
+                            {% endif %}
+                            </div>
+
+                            {% endif %}
+                        </div>
+                        {% if person.death or person.birth %}
+                        <!-- Form Row        -->
+                        <div class="row gx-3 mb-3">
+                            <!-- Form Group-->
+                            <div class="col-md-6">
+                                <label class="small mb-1" for="personBirthday">Birthday</label>
+                                <input class="form-control" id="personBirthday" type="text" value="{{person.birth}}" readonly>
+                            </div>
+                            {% if person.death %}
+                            <!-- Form Group-->
+                            <div class="col-md-6">
+                                <label class="small mb-1" for="personDeathday">Death Day</label>
+                                <input class="form-control" id="personDeathday" type="text" value="{{person.death}}" readonly>
+                            </div>
+                            {% else %}
+                            <!-- Form Group-->
+                            <div class="col-md-6">
+                                <label class="small mb-1" for="personAge">Age</label>
+                                <input class="form-control" id="personAge" type="text" value="{{person.age}}" readonly>
+                            </div>                            
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+            {% if relationships|length > 0 %}
+            <!-- Person relation details card-->
+            <div class="card mb-4">
+                <div class="card-header">Relationship Details</div>
+                <div class="card-body">
+                    <form>
+                        {% for relationship in relationships %} <!-- Spouse -->
+                            {% if person.get_spouses|length > 0 %}
+                            {% if relationship.relation == 'Spouse' %}
+                            <div class="row gx-3 mb-3">
+                                {% if relationship.primaryPerson == person  %}
+                                    {% if relationship.secondaryPerson.gender == 'M' %}
+                                    <!-- Form Group -->
+                                    <div class="col-md-6">
+                                        <label class="small mb-1" for="personHusband">Husband</label>
+                                        <a href="{{relationship.secondaryPerson.get_absolute_url}}">
+                                        <input class="form-control" id="personHusband" type="text" value="{{relationship.secondaryPerson.nepaliName}}" readonly></a>
+                                    </div>
+
+                                    {% elif relationship.secondaryPerson.gender == 'F' %}
+                                    <!-- Form Group -->
+                                    <div class="col-md-6">
+                                        <label class="small mb-1" for="personWife">Wife</label>
+                                        <a href="{{relationship.secondaryPerson.get_absolute_url}}">
+                                        <input class="form-control" id="personWife" type="text" value="{{relationship.secondaryPerson.nepaliName}}" readonly></a>
+                                    </div>
+                                    {% endif %}
+                                {% elif relationship.secondaryPerson == person %}
+                                    {% if relationship.primaryPerson.gender == 'M' %}
+                                    <!-- Form Group -->
+                                    <div class="col-md-6">
+                                        <label class="small mb-1" for="personHusband">Husband</label>
+                                        <a href="{{relationship.primaryPerson.get_absolute_url}}">
+                                        <input class="form-control" id="personHusband" type="text" value="{{relationship.primaryPerson.nepaliName}}" readonly></a>
+                                    </div>
+
+                                    {% elif relationship.primaryPerson.gender == 'F' %}
+                                    <!-- Form Group -->
+                                    <div class="col-md-6">
+                                        <label class="small mb-1" for="personWife">Wife</label>
+                                        <a href="{{relationship.primaryPerson.get_absolute_url}}">
+                                        <input class="form-control" id="personWife" type="text" value="{{relationship.primaryPerson.nepaliName}}" readonly></a>
+                                    </div>
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                            <hr>
+
+                            {% endif %}
+                            {% endif %}
+                        {% endfor %}
+
+                        {% for relationship in relationships %} <!--Sons and Daughters-->
+                                <!-- Form Row        -->
+                                {% if relationship.relation == 'Child' and relationship.secondaryPerson == person %}
+                                <div class="row gx-3 mb-3">
+                                    {% if relationship.primaryPerson.gender == 'M' %}
+                                    <!-- Form Group -->
+                                    <div class="col-md-6">
+                                        <label class="small mb-1" for="personSon"><i class="bi bi-gender-male"></i> Son</label>
+                                        <a href="{{relationship.primaryPerson.get_absolute_url}}">
+                                        <input class="form-control" id="personSon" type="text" value="{{relationship.primaryPerson.nepaliName}}" readonly></a>
+                                    </div>
+                                        {% if relationship.primaryPerson.get_spouses|length > 0 %}
+                                        <!-- Form Group -->
+                                        <div class="col-md-6">
+                                            <label class="small mb-1" for="personDaughterInLaw"><i class="bi bi-gender-female"></i> Daughter-In-Law</label>
+                                            {% for spouse in relationship.primaryPerson.get_spouses  %}
+                                            <a href="{{spouse.get_absolute_url}}">
+
+                                            <input class="form-control" id="personDaughter" type="text" value="{{spouse.nepaliName}}" readonly></a>
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+                                    {% elif relationship.primaryPerson.gender == 'F' %}
+                                    <!-- Form Group -->
+                                    <div class="col-md-6">
+                                        <label class="small mb-1" for="personDaughter"><i class="bi bi-gender-female"></i> Daughter</label>
+                                        <a href="{{relationship.primaryPerson.get_absolute_url}}">
+                                        <input class="form-control" id="personDaughter" type="text" value="{{relationship.primaryPerson.nepaliName}}" readonly></a>
+                                    </div>
+                                        {% if relationship.primaryPerson.get_spouses|length > 0 %}
+                                        <!-- Form Group -->
+                                        <div class="col-md-6">
+                                            <label class="small mb-1" for="personSonInLaw"><i class="bi bi-gender-male"></i> Son-In-Law</label>
+                                            {% for spouse in relationship.primaryPerson.get_spouses  %}
+                                            <a href="{{spouse.get_absolute_url}}">
+
+                                            <input class="form-control" id="personSonInLaw" type="text" value="{{spouse.nepaliName}}" readonly></a>
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+                                {% endif %}
+                                </div>
+                                <hr>
+
+                            {% endif %}
+                            
+                        {% endfor %}
+
+                        {% for relationship in relationships %} <!--Father,Mother & Brother,Sisters-->
+                            <!-- Form Row        -->
+                            {% if relationship.relation == 'Child' and relationship.primaryPerson == person %}
+                                <div class="row gx-3 mb-3">
+                                    {% if relationship.secondaryPerson.gender == 'M' %}
+                                    <!-- Form Group -->
+                                    <div class="col-md-6">
+                                        <label class="small mb-1" for="personFather">Father</label>
+                                        <a href="{{relationship.secondaryPerson.get_absolute_url}}">
+                                        <input class="form-control" id="personFather" type="text" value="{{relationship.secondaryPerson.nepaliName}}" readonly></a>
+                                    </div>
+                                    {% elif relationship.secondaryPerson.gender == 'F' %}
+                                    <!-- Form Group -->
+                                    <div class="col-md-6">
+                                        <label class="small mb-1" for="personMother">Mother</label>
+                                        <a href="{{relationship.secondaryPerson.get_absolute_url}}">
+                                        <input class="form-control" id="personMother" type="text" value="{{relationship.secondaryPerson.nepaliName}}" readonly></a>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <hr>
+                                {% if relationship.secondaryPerson.get_childrens|length > 0 %}
+                                {% for brotherSisters in relationship.secondaryPerson.get_childrens %}
+                                    {% if brotherSisters != relationship.primaryPerson %}
+                                    
+                                        {% if brotherSisters.gender == 'M' %}
+                                            <div class="row gx-3 mb-3">
+                                                <!-- Form Group -->
+                                                <div class="col-md-6">
+                                                    <label class="small mb-1" for="personFather">Brother</label>
+                                                    <a href="{{brotherSisters.get_absolute_url}}">
+                                                    <input class="form-control" id="personFather" type="text" value="{{brotherSisters.nepaliName}}" readonly></a>
+                                                </div>
+                                                {% if brotherSisters.get_spouses|length > 0 %}
+                                                <!-- Form Group -->
+                                                <div class="col-md-6">
+                                                    <label class="small mb-1" for="personFather">Sisten-In-Law</label>
+                                                {% for brotherSpouse in brotherSisters.get_spouses %}
+                                                    <a href="{{brotherSpouse.get_absolute_url}}">
+                                                    <input class="form-control" id="personFather" type="text" value="{{brotherSpouse.nepaliName}}" readonly></a>
+                                                {% endfor %}
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                        {% elif brotherSisters.gender == 'F' %}
+                                        <div class="row gx-3 mb-3">
+                                            <!-- Form Group -->
+                                            <div class="col-md-6">
+                                                <label class="small mb-1" for="personFather">Sister</label>
+                                                <a href="{{brotherSisters.get_absolute_url}}">
+                                                <input class="form-control" id="personFather" type="text" value="{{brotherSisters.nepaliName}}" readonly></a>
+                                            </div>
+                                            {% if brotherSisters.get_spouses|length > 0 %}
+                                            <!-- Form Group -->
+                                            <div class="col-md-6">
+                                                <label class="small mb-1" for="personFather">Brother-In-Law</label>
+                                            {% for sisterSpouse in brotherSisters.get_spouses %}
+                                                <a href="{{sisterSpouse.get_absolute_url}}">
+                                                <input class="form-control" id="personFather" type="text" value="{{sisterSpouse.nepaliName}}" readonly></a>
+                                            {% endfor %}
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                        {% endif %}
+                                    {% endif %}
+                                {% endfor %}
+                                {% endif %}
+
+                                {% endif %}
+                            
+                        {% endfor %}
+
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+            {% if person.contactDetails|length > 0 or person.address > 0 or person.emailAddress > 0 %}
+            <!-- Person contact details card-->
+            <div class="card mb-4">
+                <div class="card-header">Contact Details</div>
+                <div class="card-body">
+                    <form>
+                        <!-- Form Group-->
+                        <div class="mb-3">
+                            <label class="small mb-1" for="person{{person.contactDetails}}Detail">Phone Numbers</label>
+                            <input class="form-control" id="person{{person.contactDetails}}Detail" type="text" placeholder="" value="{{person.contactDetails}}" readonly>
+                        </div>
+                        {% if person.address %}
+                        <!-- Form Group-->
+                        <div class="mb-3">
+                            <label class="small mb-1" for="person{{person.address}}Detail">Address</label>
+                            <input class="form-control" id="person{{person.address}}Detail" type="text" placeholder="" value="{{person.address}}" readonly>
+                        </div>
+                        {% endif %}
+                        {% if person.emailAddress %}
+                        <!-- Form Group-->
+                        <div class="mb-3">
+                            <label class="small mb-1" for="person{{person.emailAddress}}Detail">Email</label>
+                            <input class="form-control" id="person{{person.emailAddress}}Detail" type="text" placeholder="" value="{{person.emailAddress}}" readonly>
+                        </div>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}

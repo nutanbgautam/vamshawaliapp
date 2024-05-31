@@ -1,0 +1,325 @@
+{% extends 'base.html' %}
+
+{% block page_title %}
+Gautam Vamshawali : Persons
+{% endblock page_title %}
+
+{% block extra_css %}
+    <style>
+        table#personTable tr td:nth-child(2) {
+            text-align: left;
+        }
+    </style>
+{% endblock extra_css%}
+
+{% block nav_menu %}
+
+{% if page_obj.has_previous or page_obj.has_next %}
+<div class="pagination mb-0">
+    <span class="step-links">
+      <ul class="pagination mb-0">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+          <a class="" href="?page=1"><button class="btn btn-light"><i class="bi bi-skip-start-btn-fill"></i> First</button></a>
+        </li>&nbsp;
+        <li class="page-item">
+          <a class="" href="?page={{ page_obj.previous_page_number }}"><button class="btn btn-light"><i class="bi bi-skip-start-fill"></i> Previous</button></a>
+        </li>&nbsp;
+        {% endif %}
+        <li class="page-item disabled">
+          <span class="page-link border border-primary border-2 rounded">
+            Page <b>{{ page_obj.number }}</b> of {{ page_obj.paginator.num_pages }}
+          </span>
+        </li>&nbsp;
+        {% if page_obj.has_next %}
+        <li class="page-item">
+          <a class="" href="?page={{ page_obj.next_page_number }}"><button class="btn btn-light">Next <i class="bi bi-skip-end-fill"></i></button></a>
+        </li>&nbsp;
+        <li class="page-item">
+          <a class="" href="?page={{ page_obj.paginator.num_pages }}"><button class="btn btn-light">Last <i class="bi bi-skip-end-btn-fill"></i></button></a>
+        </li>
+        {% endif %}
+      </ul>
+    </span>
+  </div>
+{% endif %}
+
+{% if user.is_authenticated %}
+    <a class="nav-link " href="{% url 'create_person' %}"><button type="button" class="btn btn-outline-success"><i class="bi bi-plus-circle-fill"></i> Person</button></a>
+{% endif %}
+    {% endblock %}
+
+
+{% block page_content %}
+<table class="table table-striped" id="personTable"> 
+    <thead class="table-dark">
+        <tr>
+            {% if person.personId is not 0 %}
+            <th scope="col">BRN</th>
+            {% else %}
+            <th scope="col"></th>
+            {% endif %}
+            <th scope="col">नाम</th>
+            <th scope="col">पुस्ता</th>
+            <th scope="col">जीवनसाथी</th>
+            <th scope="col">सन्तान</th>
+            <th scope="col">बुवा</th>
+            <th scope="col">आमा</th>
+            <th scope="col">हजुरबुवा</th>
+            <th scope="col"></th>
+            <th scope="col"></th>
+            {% if not user.is_authenticated %}
+            <th scope="col"></th>
+            {% endif %}
+        </tr>
+    </thead>
+
+{% for person in persons %}
+    {% if person.personId > -1 %}
+    <tr>
+        {% if person.personId is not 0 %}
+        <th scope="row">{{ person.bookReferenceNumber }}</th>
+        {% else %}
+            {% if person.get_parents|length > 0 %}
+                {% for parent in person.get_parents %}
+                    {% if parent.secondaryPerson.gender == 'F' %}
+                        {% if person.gender == 'M' %}
+                            <th scope="row">भान्जा</th>
+                        {% elif person.gender == 'F' %}
+                            <th scope="row">भान्जी</th>
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+            {% elif person.get_spouses|length > 0 %}
+                {% if person.gender == 'M' %}
+                <th scope="row">ज्वाँई</th>
+                {% elif person.gender == 'F' %}
+                <th scope="row">बुहारी</th>
+                {% endif %}
+            {% endif %}
+
+                
+        {% endif %}
+
+        <td>
+            <a href="{{person.get_absolute_url}}">
+                <b>
+                {% if person.gender == 'M' %}
+                <button class="btn btn-primary btn-block btn-male">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-person-standing" viewBox="0 0 16 16">
+                        <path d="M8 3a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3M6 6.75v8.5a.75.75 0 0 0 1.5 0V10.5a.5.5 0 0 1 1 0v4.75a.75.75 0 0 0 1.5 0v-8.5a.25.25 0 1 1 .5 0v2.5a.75.75 0 0 0 1.5 0V6.5a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v2.75a.75.75 0 0 0 1.5 0v-2.5a.25.25 0 0 1 .5 0"/>
+                    </svg>
+                {% elif person.gender == 'F' %}
+                <button class="btn btn-primary btn-block btn-female">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-person-standing-dress" viewBox="0 0 16 16">
+                    <path d="M8 3a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3m-.5 12.25V12h1v3.25a.75.75 0 0 0 1.5 0V12h1l-1-5v-.215a.285.285 0 0 1 .56-.078l.793 2.777a.711.711 0 1 0 1.364-.405l-1.065-3.461A3 3 0 0 0 8.784 3.5H7.216a3 3 0 0 0-2.868 2.118L3.283 9.079a.711.711 0 1 0 1.365.405l.793-2.777a.285.285 0 0 1 .56.078V7l-1 5h1v3.25a.75.75 0 0 0 1.5 0Z"/>
+                    </svg>  
+                {% else %} 
+                <button class="btn btn-primary btn-block">
+                {% endif %}
+                {{ person.nepaliName }}</button>
+                </b>
+            </a>
+            {% if user.is_authenticated %}
+            <br>
+            <center><span class="badge bg-primary"><a href="{% url 'update_person' person.id%}"><i class="bi bi-pencil-square" style="color:white;"></i></a></span>
+            <span class="badge bg-danger"><a href="{% url 'delete_person' person.id%}"><i class="bi bi-trash" style="color:white;"></i></a></span></center>
+            {% endif %}
+        </td>
+        <td>{{ person.pustaNumber }}</td>
+        <td>
+            {% if person.get_spouses|length > 0 %}
+            <p>
+                <button class="btn btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseWidthSpouse{{person.id}}" aria-expanded="false" aria-controls="collapseWidthSpouse">
+                    <i class="bi bi-person-hearts"></i> Spouses 
+                </button>
+              </p>
+              <div style="">
+                <div class="collapse collapse-horizontal" id="collapseWidthSpouse{{person.id}}">
+                  <div class="card card-body" style="width: 300px;">
+                    {% for spouse in person.get_spouses %}
+
+                    <form action="{% url 'search' %}" method="POST">
+                        {% csrf_token %}
+                        <input name="personId" type="text" class="form-control" id="personIdSearchFromList" style="display: none;" value="{{spouse.id}}">
+                        <button type="submit" class="btn btn-link btn-block">{{ spouse.nepaliName }}</button></a>
+                    </form>
+        
+                    {% endfor %}                  
+                </div>
+                </div>
+              </div>
+            {% endif %}
+        </td>
+
+        <td>
+
+            {% if person.get_childrens|length > 0 %}
+            <p>
+                <button class="btn btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseWidthChildren{{person.id}}" aria-expanded="false" aria-controls="collapseWidthChildren">
+                    <i class="bi bi-person"></i> Childrens 
+                </button>
+              </p>
+              <div style="">
+                <div class="collapse collapse-horizontal" id="collapseWidthChildren{{person.id}}">
+                  <div class="card card-body" style="width: 300px;">
+                    {% for child in person.get_childrens %}
+                    {% if child.gender == 'M' %}
+                    <form action="{% url 'search' %}" method="POST">
+                        {% csrf_token %}
+                        <input name="personId" type="text" class="form-control" id="personIdSearchFromList" style="display: none;" value="{{child.id}}">
+                        <button type="submit" class="btn btn-link btn-block"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-person-standing" viewBox="0 0 16 16">
+                            <path d="M8 3a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3M6 6.75v8.5a.75.75 0 0 0 1.5 0V10.5a.5.5 0 0 1 1 0v4.75a.75.75 0 0 0 1.5 0v-8.5a.25.25 0 1 1 .5 0v2.5a.75.75 0 0 0 1.5 0V6.5a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v2.75a.75.75 0 0 0 1.5 0v-2.5a.25.25 0 0 1 .5 0"/>
+                          </svg> {{ child.nepaliName }}</button></a>
+                    </form>
+    
+                    {% elif child.gender == 'F' %}
+                    <form action="{% url 'search' %}" method="POST">
+                        {% csrf_token %}
+                        <input name="personId" type="text" class="form-control" id="personIdSearchFromList" style="display: none;" value="{{child.id}}">
+                        <button type="submit" class="btn btn-link btn-block"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#DE3163" class="bi bi-person-standing-dress" viewBox="0 0 16 16">
+                            <path d="M8 3a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3m-.5 12.25V12h1v3.25a.75.75 0 0 0 1.5 0V12h1l-1-5v-.215a.285.285 0 0 1 .56-.078l.793 2.777a.711.711 0 1 0 1.364-.405l-1.065-3.461A3 3 0 0 0 8.784 3.5H7.216a3 3 0 0 0-2.868 2.118L3.283 9.079a.711.711 0 1 0 1.365.405l.793-2.777a.285.285 0 0 1 .56.078V7l-1 5h1v3.25a.75.75 0 0 0 1.5 0Z"/>
+                          </svg> {{ child.nepaliName }}</button></a>
+                    </form>
+    
+                    {% endif %}<br>
+                {% endfor %}                
+                </div>
+                </div>
+              </div>
+            {% endif %}
+        </td>
+
+        {% if person.get_parents %}
+            {% for parent in person.get_parents %}
+                {% if parent.secondaryPerson.gender == 'M' %}
+                    <td>
+                        <form action="{% url 'search' %}" method="POST">
+                            {% csrf_token %}
+                            <input name="personId" type="text" class="form-control" id="personIdSearchFromList" style="display: none;" value="{{parent.secondaryPerson.id}}">
+                            <button type="submit" class="btn btn-link btn-block">{{ parent.secondaryPerson.nepaliName }}</button></a>
+                        </form>
+                    </td>
+                    <td>
+                        {% if parent.secondaryPerson.get_spouses %}
+                        <p>
+                            <button class="btn btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseWidthMother{{person.id}}" aria-expanded="false" aria-controls="collapseWidthMother">
+                                 Mothers 
+                            </button>
+                          </p>
+                          <div style="">
+                            <div class="collapse" id="collapseWidthMother{{person.id}}">
+                              <div class="card card-body" style="width: 300px;">
+                                {% for parentSpouse in parent.secondaryPerson.get_spouses %}                                
+                                <form action="{% url 'search' %}" method="POST">
+                                    {% csrf_token %}
+                                    <input name="personId" type="text" class="form-control" id="personIdSearchFromList" style="display: none;" value="{{parentSpouse.id}}">
+                                    <button type="submit" class="btn btn-link btn-block">{{ parentSpouse.nepaliName }}</button></a>
+                                </form>
+                                {% endfor %}                
+                            </div>
+                            </div>
+                          </div>
+                        {% endif %}
+                    </td>
+                {% elif parent.secondaryPerson.gender == 'F' %}
+                    <td></td>
+                    <td>
+                        <p>
+                            <button class="btn btn-outline-primary" type="button" onclick="toggleCollapse('collapseMother{{person.id}}')"  aria-expanded="false" aria-controls="collapseMother{{person.id}}">
+                                <i class="bi bi-person-standing-dress"></i> Mother <span class="badge badge-primary badge-pill">1</span>
+                            </button>
+                          </p>
+                          <div class="collapse" id="collapseMother{{person.id}}">
+                            <div class="card card-body">                              
+                                <form action="{% url 'search' %}" method="POST">
+                                    {% csrf_token %}
+                                    <input name="personId" type="text" class="form-control" id="personIdSearchFromList" style="display: none;" value="{{parent.secondaryPerson.id}}">
+                                    <button type="submit" class="btn btn-link btn-block">{{ parent.secondaryPerson.nepaliName }}</button></a>
+                                </form>
+                            </div>
+                        </div>
+                    </td>
+                {% endif %}
+            {% endfor %}
+        {% else %}
+            {% if person.personId != 1 %}
+                <td></td>
+                <td></td>
+            {% else %}
+                <td></td>
+                <td></td>
+            {% endif %}
+        {% endif %}
+
+        <td> 
+            
+            {% if person.get_parents %}
+                {% for parent in person.get_parents %}
+                    {% if parent.secondaryPerson.get_parents %}
+                        {% for grandParent in parent.secondaryPerson.get_parents %}
+                        <form action="{% url 'search' %}" method="POST">
+                            {% csrf_token %}
+                            <input name="personId" type="text" class="form-control" id="personIdSearchFromList" style="display: none;" value="{{grandParent.secondaryPerson.id}}">
+                            <button type="submit" class="btn btn-link btn-block">{{grandParent.secondaryPerson.nepaliName}}</button></a>
+                        </form>
+                        {% endfor %}
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+        </td>
+        <td><a href="{% url 'family_tree' person.id%}"><button type="button" class="btn btn-outline-success"><i class="bi bi-diagram-3-fill"></i> View Tree</button></a></td>
+
+        {% if person.photo %}  <!-- Check if person object has a photo -->
+            <td><button class="btn btn-primary view-photo-btn" data-toggle="modal" data-target="#imageModal" data-src="{{ person.photo.url }}" data-name="{{ person.nepaliName }}"><i class="bi bi-image"></i> View Photo</button></td>
+        {% else %}
+            <!-- <td><i class="bi bi-image"></i> No Photo</td> -->
+            <td></td>
+        {% endif %}
+
+    </tr>
+    {% endif %}
+{% endfor %}
+{% if page_obj.has_next %}
+{% endif %}
+</table>
+
+<!-- Modal -->
+<div class="modal fade" id="imageModal" tabindex="-1" role="dialog" aria-labelledby="imageModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="imageModalLabel">Person's Photo</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <img src="#" id="modalImage" class="img-fluid" alt="Image">
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function() {
+        $('.view-photo-btn').click(function() {
+            var imageUrl = $(this).data('src');
+            var personName = $(this).data('name');
+            $('#modalImage').attr('src', imageUrl);
+            $('#imageModalLabel').text(personName + "'s Photo");
+        });
+    });
+
+    function toggleCollapse(collapseId) {
+        var collapseElement = document.getElementById(collapseId);
+        if (collapseElement.classList.contains('show')) {
+            collapseElement.classList.remove('show');
+        } else {
+            collapseElement.classList.add('show');
+        }
+    }
+</script>
+
+
+{% endblock page_content %}

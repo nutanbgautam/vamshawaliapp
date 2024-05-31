@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block page_title %}
+Gautam Vamshawali : Update {{suggestion.id}}
+{% endblock page_title %}
+
+{% block page_content %}
+
+<form method="post">  
+    {% csrf_token %}  
+    {{ form.as_p }}  
+    <input class="btn btn-primary" type="submit" value="Update">
+</form>
+</div>
+<script>
+    document.getElementById("id_billing_date").type="date"
+    document.getElementById("id_delivery_date").type="date"
+    var forms = document.getElementsByTagName('form');
+    var divs = forms[0].getElementsByTagName('div');
+    // Loop through the div elements and add the "form-group" class
+    for (var current_div = 0; current_div < divs.length; current_div++) 
+    {
+        divs[current_div].classList.add('form-group');
+    }
+
+</script>
+{% endblock %}

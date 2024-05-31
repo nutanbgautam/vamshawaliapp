@@ -1,0 +1,17 @@
+asgiref==3.8.1
+backports.functools-lru-cache==2.0.0
+click==8.1.7
+Django==5.0.6
+indic-transliteration==2.3.59
+markdown-it-py==3.0.0
+mdurl==0.1.2
+pillow==10.3.0
+Pygments==2.18.0
+regex==2024.5.15
+rich==13.7.1
+roman==4.2
+shellingham==1.5.4
+sqlparse==0.5.0
+toml==0.10.2
+typer==0.12.3
+typing_extensions==4.11.0

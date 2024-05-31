@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+
+{% block page_title %}
+Gautam Vamshawali : Login
+{% endblock page_title %}
+
+{% block page_content %}
+<div class="container">
+    <div class="alert alert-primary" role="alert">
+        Enter your login detail
+    </div>    
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_div }}
+        <button type="submit" class="btn btn-primary">Login</button>
+    </form>
+</div>
+    <script>
+        var forms = document.getElementsByTagName('form');
+        var divs = forms[0].getElementsByTagName('div');
+        // Loop through the div elements and add the "form-group" class
+        for (var current_div = 0; current_div < divs.length; current_div++) 
+        {
+            divs[current_div].classList.add('form-group');
+        }
+
+        var inputs = forms[0].getElementsByTagName('input');
+        // Loop through the input elements and add the "form-group" class
+        for (var current_input = 0; current_input < inputs.length; current_input++) 
+        {
+            inputs[current_input].classList.add('form-control');
+        }
+
+        var uls = document.getElementsByTagName('ul');
+        // Loop through the ul elements and add the "form-group" class
+        for (var current_ul = 0; current_ul < uls.length; current_ul++) 
+        {
+            uls[current_ul].classList.add('alert alert-danger');
+        }
+
+        
+    </script>
+{% endblock %}

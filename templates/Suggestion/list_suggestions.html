@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block page_title %}
+Gautam Vamshawali : Suggestions
+{% endblock page_title %}
+
+{% block nav_menu %}
+    <a class="nav-link " href="{% url 'create_person' %}"><button type="button" class="btn btn-outline-success"><i class="bi bi-plus-circle-fill"></i> Person</button></a>
+{% endblock %}
+
+{% block page_content %}
+
+<input type="text" id="searchInput" class="form-control mr-sm-2" onkeyup="filterSuggestions()" placeholder="Search by ID">
+<br>
+<table class="table table-striped" id="suggestionTable"> 
+
+    <thead class="table-dark">
+        <tr>
+            <th scope="col">ID</th>
+            <th scope="col">Person</th>
+            <th scope="col">BRN</th>
+            <th scope="col">Suggestion</th>
+            <th scope="col">Name of Suggester</th>
+            <th scope="col">Contact Option</th>
+            <th scope="col">Contact Detail</th>
+            <th scope="col">Created On</th>
+            <th scope="col"></th>
+            <th scope="col"></th>
+        </tr>
+    </thead>
+
+{% for suggestion in suggestions %}
+
+    <tr>
+        <th scope="row">{{ suggestion.id }}</th>
+        <td><a href="{{suggestion.primaryPerson.get_absolute_url}}">{{ suggestion.primaryPerson.nepaliName }}</a></td>
+        <td>{{ suggestion.primaryPerson.bookReferenceNumber }}</td>
+        <td>{{ suggestion.suggestion }}</td>
+        <td>{{suggestion.name}}</td>
+        <td>{{suggestion.contactOption}}</td>
+        <td>{{suggestion.contactDetail}}</td>
+        <td>{{suggestion.created_on}}</td>
+        <td><a href="{% url 'update_suggestion' suggestion.id%}"><button type="button" class="btn btn-primary"><i class="bi bi-pencil-square"></i> Edit</button></a></td>
+        <td><a href="{% url 'delete_suggestion' suggestion.id%}"><button type="button" class="btn btn-danger"><i class="bi bi-trash"></i> Delete</button></a></td>
+    </tr>
+
+{% endfor %}
+
+</table>
+
+<script>
+    function filterSuggestions() {
+        var input, filter, table, tr, td, i, txtValue;
+        input = document.getElementById('searchInput');
+        filter = input.value.toLowerCase();
+        table = document.getElementById('suggestionTable');
+        tr = table.getElementsByTagName('tr');
+        
+        // Loop through all table rows, and hide those who don't match the search query
+        for (i = 1; i < tr.length; i++) {
+            td = tr[i].getElementsByTagName('th')[0]; // Get the first column only
+            if (td) {
+                txtValue = td.textContent || td.innerText;
+                if (txtValue.toLowerCase().indexOf(filter) > -1) {
+                    tr[i].style.display = '';
+                } else {
+                    tr[i].style.display = 'none';
+                }
+            }
+        }
+    }
+    </script>
+
+{% endblock page_content %}
