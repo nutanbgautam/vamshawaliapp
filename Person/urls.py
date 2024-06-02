@@ -23,6 +23,8 @@ urlpatterns = [
     #Family Tree
     path('tree/person/<int:pk>', family_tree, name='family_tree'),
 
+    path('person-autocomplete/', PersonAutocomplete.as_view(), name='person-autocomplete'),
+
     # Code to be checked from here before adding to production
-    path('person-autocomplete/', PersonAutocomplete.as_view(), name='person-autocomplete')
+
 ]

@@ -127,6 +127,24 @@ class Person(models.Model):
 
         fetch_ancestors(self, max_depth)
         return ancestors
+    
+    def save(self,*args,**kwargs):
+        import nepali_roman as nr
+        #Save Romanized Nepali Name if not provided
+        if self.nepaliName and not self.name:
+            self.name =nr.romanize_text(self.full_name).lower() 
+
+        try:
+            #Get Pusta Number from Parent then set self Pusta Number
+            if len(self.get_parents())>0:
+                for parent in self.get_parents():
+                    if parent.primaryPerson.personId >0 :
+                        self.pustaNumber = parent.primaryPerson.pustaNumber + 1
+                    elif parent.secondaryPerson.personId >0 :
+                        self.pustaNumber = parent.secondaryPerson.pustaNumber + 1
+        except:pass
+
+        super(Person,self).save()
 
 
 class PersonRelationship(models.Model):

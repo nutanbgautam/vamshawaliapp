@@ -2,6 +2,7 @@ from Person.models import Person, PersonRelationship
 from django.db.models import Max
 from django.urls import reverse
 from django.shortcuts import redirect
+import nepali_roman as nr
 
 def csv_data_load():
 
@@ -46,7 +47,7 @@ def csv_data_load():
 
     def process_spouse_value(value):
         # Check if the value is equal to "......."
-        if value == ".......":
+        if value == "...":
             return ["Unknown"]
         
         # Check if the value contains "," and/or " र " and split accordingly
@@ -93,7 +94,7 @@ def csv_data_load():
         row_count += 1
         newPerson = Person()
         newPerson.personId = get_max_and_increment()
-        newPerson.name = nepali_to_roman(row[0])
+        newPerson.name = nr.romanize_text(row[0]).lower() 
         newPerson.nepaliName = row[0]
         newPerson.gender = row[1]
         newPerson.pustaNumber = row[3]
@@ -116,7 +117,7 @@ def csv_data_load():
         for spouse in spouses:
             if spouse != "Unknown" and spouse!="":
                 newSpouse = Person()
-                newSpouse.name = nepali_to_roman(spouse)
+                newSpouse.name = nr.romanize_text(spouse).lower() 
                 newSpouse.nepaliName = spouse
                 if newPerson.gender == "M":
                     newSpouse.gender = "F"
@@ -135,7 +136,7 @@ def csv_data_load():
         for child in childrens:
             if "निसन्तान" not in child[0] and child[2] == "******" and child[0] != "" and child[0] != "": 
                 newChild = Person()
-                newChild.name = nepali_to_roman(child[0])
+                newChild.name = nr.romanize_text(child[0]).lower()
                 newChild.nepaliName = child[0]
                 newChild.gender = child[1]
                 if newPerson.gender == "M":

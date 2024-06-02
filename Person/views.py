@@ -11,6 +11,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from .models import Person
 from dal import autocomplete
 from .forms import PersonRelationshipFormSet
+import re
 
 #HTML Templates
 person_create_template          = 'Person/create_person.html'
@@ -176,10 +177,10 @@ def SuggestionDelete(request, pk):
 class SearchView(View):
     def get(self, request, *args, **kwargs):
         return render(request, search_form_template)
+    
 
     def post(self, request, *args, **kwargs):
         person_filters = {}
-        person_filters['name__icontains'] = request.POST.get('personName')
         person_filters['pustaNumber'] = request.POST.get('personPustaNumber')
         person_filters['bookReferenceNumber'] = request.POST.get('personBookReferenceNumber')
         person_filters['contactDetails__icontains'] = request.POST.get('personContactDetail')
@@ -189,7 +190,20 @@ class SearchView(View):
 
         persons = Person.objects.all()
 
+        def is_romanized_nepali(text):
+            # Common Romanized Nepali patterns/characters
+            romanized_nepali_patterns = re.compile(r'[अ-ह]')
+            return bool(romanized_nepali_patterns.search(text))
+        
+        if request.POST.get('personName') is not None:
+            if is_romanized_nepali(request.POST.get('personName')):
+                person_filters['nepaliName__icontains'] = request.POST.get('personName')
+            else:
+                person_filters['name__icontains'] = request.POST.get('personName')
+
+
         for key, value in person_filters.items():
+            print(f"Key = {key}, Value = {value}")
             if value is not None and value != "":
                 if key == 'pustaNumber' or key == 'id':
                     persons = persons.filter(**{key: int(value)})
@@ -268,4 +282,3 @@ def family_tree(request, pk):
 
 
 # Code to be checked from here before adding to production
-
