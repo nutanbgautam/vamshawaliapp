@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.db.models import Max
 
 class Person(models.Model):
     GENDER_CHOICES=[
@@ -11,7 +12,7 @@ class Person(models.Model):
     id                  = models.AutoField(primary_key=True)
 
     #Personal Details
-    name                = models.CharField(max_length=100)
+    name                = models.CharField(max_length=100,blank=True,null=True)
     nepaliName          = models.CharField(max_length=100)
     gender              = models.CharField(max_length=1,choices=GENDER_CHOICES,blank=False,default=None)
     photo               = models.ImageField(upload_to="person/images",max_length=200,blank=True,null=True)
@@ -40,20 +41,25 @@ class Person(models.Model):
     def __str__(self):
         parent_name = ""
         grandfather_name = ""
+        greatgrandfather_name = ""
 
         if self.gender == 'M':
-            relationAttribute = ["छोरा","नाती","सिर्मान",""]
+            relationAttribute = ["छोरा","नाती","पनाती","सिर्मान",""]
         elif self.gender == 'F':
-            relationAttribute = ["छोरी","नातिनी","सिर्मती",""]
-
+            relationAttribute = ["छोरी","नातिनी","पनातिनी","सिर्मती",""]
+        
         # Fetching the father's name
         father_relation = PersonRelationship.objects.filter(primaryPerson=self, relation='Child').select_related('secondaryPerson').first()
         if father_relation:
             parent_name = father_relation.secondaryPerson.nepaliName
             # Fetching the grandfather's name
             grandfather_relation = PersonRelationship.objects.filter(primaryPerson=father_relation.secondaryPerson, relation='Child').select_related('secondaryPerson').first()
+
             if grandfather_relation:
                 grandfather_name = grandfather_relation.secondaryPerson.nepaliName
+                greatgrandfather_relation = PersonRelationship.objects.filter(primaryPerson=grandfather_relation.secondaryPerson, relation='Child').select_related('secondaryPerson').first()
+                if greatgrandfather_relation is not None:
+                    greatgrandfather_name = greatgrandfather_relation.secondaryPerson.nepaliName
 
         # If no father is found, try to find mother
         if not parent_name:
@@ -66,11 +72,14 @@ class Person(models.Model):
                     grandfather_relation = PersonRelationship.objects.filter(primaryPerson=father_relation.secondaryPerson, relation='Child').select_related('secondaryPerson').first()
                     if grandfather_relation:
                         grandfather_name = grandfather_relation.secondaryPerson.nepaliName
+                        if greatgrandfather_relation is not None:
+                            greatgrandfather_name = greatgrandfather_relation.secondaryPerson.nepaliName
 
-        if not grandfather_name:
-            return f"{self.nepaliName} : पुस्ता - {self.pustaNumber}"
-            
-        return f"{grandfather_name} को {relationAttribute[1]}, {parent_name} को {relationAttribute[0]}, {self.nepaliName} : पुस्ता - {self.pustaNumber}"
+        if not greatgrandfather_name:
+            if not grandfather_name:
+                return f"{self.nepaliName} : पुस्ता - {self.pustaNumber}"
+            return f"{grandfather_name} को {relationAttribute[1]}, {parent_name} को {relationAttribute[0]}, {self.nepaliName} : पुस्ता - {self.pustaNumber}"
+        return f"{greatgrandfather_name} को {relationAttribute[2]}, {grandfather_name} को {relationAttribute[1]}, {parent_name} को {relationAttribute[0]}, {self.nepaliName} : पुस्ता - {self.pustaNumber}"
 
         
     def get_absolute_url(self):
@@ -129,20 +138,36 @@ class Person(models.Model):
         return ancestors
     
     def save(self,*args,**kwargs):
+        def get_max_and_increment():
+            # Get the maximum value of the variable in all objects
+            max_value = Person.objects.aggregate(Max('personId'))['personId__max']
+            # Check if there are any objects in the database
+            if max_value is not None:
+                # Increment the maximum value by 1
+                max_value += 1
+            elif max_value == None:
+                max_value = 0
+            else:
+                # If there are no objects, start from 1
+                max_value = 1
+            
+            return max_value
+                
         import nepali_roman as nr
         #Save Romanized Nepali Name if not provided
         if self.nepaliName and not self.name:
-            self.name =nr.romanize_text(self.full_name).lower() 
+            self.name =nr.romanize_text(self.nepaliName).lower() 
 
+        super(Person,self).save()
         try:
             #Get Pusta Number from Parent then set self Pusta Number
             if len(self.get_parents())>0:
                 for parent in self.get_parents():
-                    if parent.primaryPerson.personId >0 :
-                        self.pustaNumber = parent.primaryPerson.pustaNumber + 1
-                    elif parent.secondaryPerson.personId >0 :
+                    if parent.secondaryPerson.personId >0 :
                         self.pustaNumber = parent.secondaryPerson.pustaNumber + 1
-        except:pass
+                        self.personId = get_max_and_increment()
+
+        except Exception as e:print("Exception ",e)
 
         super(Person,self).save()
 
@@ -181,12 +206,16 @@ class PersonRelationship(models.Model):
             if secondary_grandfather_relation:
                 secondary_grandfather_name = secondary_grandfather_relation.secondaryPerson.nepaliName
         
-        if self.primaryPerson.personId is 0:
+        if self.primaryPerson.personId == 0:
             return f"{primary_person.nepaliName} is {self.relation} of {secondary_person.nepaliName} Father: {secondary_father_name} Grandfather: {secondary_grandfather_name}"
-        elif self.secondaryPerson.personId is 0:
-            return f"{primary_person.nepaliName} Father: {primary_father_name} Grandfather: {primary_grandfather_name} is {self.relation} of {secondary_person.nepaliName}"
+        elif self.secondaryPerson.personId == 0:
+            return f"Father: {primary_father_name} || Grandfather: {primary_grandfather_name} ||{primary_person.nepaliName} is {self.relation} of {secondary_person.nepaliName}"
         else:
-            return f"{primary_person.nepaliName} Father: {primary_father_name} Grandfather: {primary_grandfather_name} is {self.relation} of {secondary_person.nepaliName} Father: {secondary_father_name} Grandfather: {secondary_grandfather_name}"
+            return f"Father: {primary_father_name} || Grandfather: {primary_grandfather_name} ||{primary_person.nepaliName} is {self.relation} of {secondary_person.nepaliName} || Father: {secondary_father_name} || Grandfather: {secondary_grandfather_name} ||"
+
+    def save(self,*args,**kwargs):
+        super(PersonRelationship,self).save()
+        super(Person,self.primaryPerson).save()
 
 class ContactDetail(models.Model):
     CONTACT_CHOICES =[

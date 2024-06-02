@@ -40,11 +40,6 @@ def csv_data_load():
     load_csv(filename)
 
 
-    def nepali_to_roman(nepali_name):
-        roman_nepali_name = sanscript.transliterate(nepali_name, sanscript.DEVANAGARI, sanscript.IAST)
-        return roman_nepali_name
-
-
     def process_spouse_value(value):
         # Check if the value is equal to "......."
         if value == "...":

@@ -43,7 +43,7 @@ Gautam Vamshawali : {{person.nepaliName}} Tree
         const rootData = {
             name: "{{ person.nepaliName }}", // Person's name as root
             gender: "{{ person.gender }}", // Person's gender
-            children: [{ name: "Ancestors", children: ancestorsData.children }, { name: "Childrens", children: descendantsData.children }]
+            children: [{ name: "पुर्खा", children: ancestorsData.children }, { name: "सन्तति", children: descendantsData.children }]
         };
 
         // Set the dimensions and margins of the diagram
@@ -128,9 +128,9 @@ Gautam Vamshawali : {{person.nepaliName}} Tree
                     return d.children || d._children ? "end" : "start";
                 })
                 .text(function(d) {
-                    if (d.data.name === "Ancestors") return "Ancestors";
-                    if (d.data.name === "Descendants") return "Descendants";
-                    if (d.data.name === "{{ person.nepaliName }}") return ""; // Hide person's node label
+                    if (d.data.name === "पुर्खा") return "पुर्खा";
+                    if (d.data.name === "सन्तति") return "सन्तति";
+                    if (d.data.name === "{{ person.name }}") return ""; // Hide person's node label
                     return d.data.name;
                 });
 

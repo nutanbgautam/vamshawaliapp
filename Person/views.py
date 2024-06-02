@@ -84,7 +84,7 @@ class PersonUpdateView(LoginRequiredMixin, UpdateView):
     model = Person
     fields = ['name', 'nepaliName', 'gender', 'photo', 'birth', 'death', 'pustaNumber', 'aliveOrDead', 'bookReferenceNumber', 'remarks', 'address', 'cityOrCountry', 'contactDetails', 'emailAddress']
     template_name = 'Person/update_person.html'
-    success_url = reverse_lazy('list_persons')
+    success_url   = reverse_lazy('list_persons')
 
     def get_context_data(self, **kwargs):
         data = super().get_context_data(**kwargs)
@@ -108,6 +108,7 @@ class PersonUpdateView(LoginRequiredMixin, UpdateView):
         context = self.get_context_data()
         context['form'] = form
         return self.render_to_response(context)
+        
 
 def PersonDetailView(request,pk):
     person = get_object_or_404(Person, pk=pk)
@@ -203,7 +204,6 @@ class SearchView(View):
 
 
         for key, value in person_filters.items():
-            print(f"Key = {key}, Value = {value}")
             if value is not None and value != "":
                 if key == 'pustaNumber' or key == 'id':
                     persons = persons.filter(**{key: int(value)})
